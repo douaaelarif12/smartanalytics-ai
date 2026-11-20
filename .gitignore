@@ -1,0 +1,20 @@
+# Local dataset storage and Python runtime files
+backend/data/
+backend/.venv/
+backend/.pytest_cache/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+
+# Frontend build/runtime files
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+
+# API credentials
+.env
+.env.*
+!.env.example
+
+!.env.compose.example
+backend/legacy-owners*.json

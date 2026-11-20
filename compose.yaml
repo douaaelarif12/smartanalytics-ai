@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: smartanalytics
+      POSTGRES_USER: smartanalytics
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.compose}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - smartanalytics_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartanalytics -d smartanalytics"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.compose}
+    command: ["sh", "-c", 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    volumes:
+      - smartanalytics_redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  migrate:
+    profiles: [app]
+    build: ./backend
+    environment: &backend_environment
+      APP_ENV: development
+      COOKIE_SECURE: "false"
+      AUTO_MIGRATE: "false"
+      SMARTANALYTICS_DATA_DIR: /app/data
+      SMARTANALYTICS_CORS_ORIGINS: http://127.0.0.1:${FRONTEND_PORT:-5174}
+      DATABASE_URL: postgresql+psycopg://smartanalytics:${POSTGRES_PASSWORD:?Use a URL-safe password}@postgres:5432/smartanalytics
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Use a URL-safe password}@redis:6379/0
+    volumes:
+      - smartanalytics_files:/app/data
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+  backend:
+    profiles: [app]
+    build: ./backend
+    environment: *backend_environment
+    volumes:
+      - smartanalytics_files:/app/data
+      - type: bind
+        source: ./backend/.env
+        target: /app/.env
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8001}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    init: true
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+  frontend:
+    profiles: [app]
+    build: ./frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5174}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+volumes:
+  smartanalytics_postgres:
+  smartanalytics_redis:
+  smartanalytics_files:

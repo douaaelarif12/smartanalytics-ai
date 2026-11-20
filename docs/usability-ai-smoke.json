@@ -1,0 +1,18 @@
+{
+  "dataset_id": "8b47aec9-1610-4a0b-89e0-0eda76feebe7",
+  "fixture": "docs\\fixtures\\usability-sales.csv",
+  "ai_http_status": 200,
+  "expected_totals": {
+    "A": 15,
+    "B": 20
+  },
+  "status": "answer",
+  "actual_totals": {
+    "A": 15.0,
+    "B": 20.0
+  },
+  "totals_match": true,
+  "chart_matches": true,
+  "explanation_present": true,
+  "explanation_generated": true
+}

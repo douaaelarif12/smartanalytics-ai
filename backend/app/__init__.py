@@ -1,0 +1,2 @@
+"""SmartAnalytics AI backend package."""
+
