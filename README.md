@@ -10,7 +10,7 @@ privés à un compte authentifié.
 Ces résultats proviennent des validations locales documentées des 12–13 novembre 2026. Les suites
 utilisent des fixtures synthétiques et n'incluent ni dataset utilisateur, ni secret, ni appel OpenAI
 réel. Les détails, commandes et limites de preuve figurent dans
-[PROGRESS.md](docs/PROGRESS.md) et [DEPLOYMENT.md](docs/DEPLOYMENT.md).
+[PROGRESS.md](docs/PROGRESS.md) et [DEPLOYMENT.md](docs/DEPLOYMENT.md).....
 
 | Vérification | Résultat observé |
 | --- | ---: |
